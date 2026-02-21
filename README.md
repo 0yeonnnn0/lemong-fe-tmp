@@ -1,19 +1,22 @@
 ## 기술 스택
 
-| 카테고리        | 기술 스택                        |
-| --------------- | -------------------------------- |
-| 빌드 도구       | Vite ^6.2.0                      |
-| 프레임워크      | React 19                         |
-| 언어            | TypeScript 5.7+                  |
-| 라우팅          | React Router ^7                  |
-| 상태 관리       | Zustand                          |
-| 데이터 페칭     | TanStack Query (React Query)     |
-| HTTP 클라이언트 | axios                            |
-| 스타일링        | TailwindCSS ^4.1.0 + shadcn/ui   |
-| 테스트          | Vitest                           |
-| 코드 품질       | ESLint ^9.21.0 + Prettier ^3.5.3 |
-| Git 훅          | Husky ^9.1.7 + lint-staged       |
-| 배포            | Vercel                           |
+| 카테고리         | 기술 스택                        |
+| ---------------- | -------------------------------- |
+| 빌드 도구        | Vite ^7.3.0                      |
+| 프레임워크       | React ^19.2.0                    |
+| 언어             | TypeScript ~5.9.0                |
+| 라우팅           | TanStack Router ^1               |
+| 상태 관리        | Zustand ^5.0.0                   |
+| 데이터 페칭      | TanStack Query ^5.90.0           |
+| HTTP 클라이언트  | axios                            |
+| 서버 단방향 통신 | SSE (Server-Sent Events)         |
+| 스타일링         | TailwindCSS ^4.2.0 + shadcn/ui   |
+| 단위 테스트      | Vitest ^4.0.0                    |
+| E2E 테스트       | Playwright ^1.58.0               |
+| 컴포넌트 문서화  | Storybook ^8.6.0                 |
+| 코드 품질        | ESLint ^9.39.0 + Prettier ^3.8.0 |
+| Git 훅           | Husky ^9.1.7 + lint-staged       |
+| 배포             | Vercel                           |
 
 ## 브랜치 전략 (Git Flow)
 
