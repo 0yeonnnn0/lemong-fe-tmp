@@ -94,44 +94,71 @@ src/
 
 ---
 
-## 개발 흐름 (이렇게 작업하면 됩니다)
+## 개발부터 배포까지 전체 흐름
+
+```
+개발 → 저장 → 코드 스타일 검사(Husky) → 커밋 → push → PR 생성 → CI 자동 검사 → merge → 자동 배포
+        ↑       ↑ 통과해야 커밋 가능                              ↑                    ↑
+   Hot Reload  ESLint + Prettier                           GitHub Actions가        Vercel이
+   로 바로확인    자동 검사/수정                                   4가지 검사 실행            자동 배포
+```
 
 ### 1단계: 브랜치 만들기
 
 ```bash
-git checkout develop          # develop 브랜치로 이동
-git pull origin develop       # 최신 코드 받기
+git checkout develop             # develop 브랜치로 이동
+git pull origin develop          # 최신 코드 받기
 git checkout -b feature/기능이름  # 작업 브랜치 생성
 ```
 
-### 2단계: 코드 작성
+### 2단계: 개발
+
+```bash
+npm run dev                      # 개발 서버 실행 (localhost:5173)
+```
 
 - `src/pages/` 에 새 페이지 추가 → `src/routes/`에 라우트 연결
 - `src/features/` 에 새 기능 추가
 - `src/shared/ui/` 에 재사용 가능한 UI 컴포넌트 추가
 - 저장하면 브라우저에서 바로 확인 가능 (Hot Reload)
 
-### 3단계: 커밋하기
+### 3단계: 커밋
 
 ```bash
 git add .
 git commit -m "feat: 로그인 페이지 추가"
+```
+
+커밋하는 순간 **Husky + lint-staged**가 자동 실행됩니다:
+
+- **Prettier** — 코드 포맷이 안 맞으면 자동으로 고쳐서 커밋
+- **ESLint** — 코드 에러가 있으면 커밋 차단 → 직접 수정 후 다시 커밋
+
+```
+커밋 시도
+  → Husky 감지
+  → lint-staged 실행
+    → Prettier: 포맷 자동 수정 ✅
+    → ESLint: 에러 없음 ✅ → 커밋 완료
+    → ESLint: 에러 있음 ❌ → 커밋 차단 → 에러 수정 후 재시도
+```
+
+### 4단계: Push
+
+```bash
 git push origin feature/기능이름
 ```
 
-커밋할 때 자동으로 코드 스타일 검사가 실행됩니다 (ESLint + Prettier).
-문제가 있으면 커밋이 안 되니, 수정 후 다시 시도하면 됩니다.
+### 5단계: PR(Pull Request) 생성
 
-### 4단계: PR(Pull Request) 만들기
-
-GitHub에서 **"New pull request"** 클릭하면 됩니다.
+GitHub에서 **"New pull request"** 클릭합니다.
 
 - base: `develop` ← compare: `feature/기능이름`
 - PR 템플릿이 자동으로 채워지니 내용만 작성하면 됩니다
 
-### 5단계: 자동 검사 (CI)
+### 6단계: CI 자동 검사 (GitHub Actions)
 
-PR을 만들면 로봇이 자동으로 4가지를 검사합니다:
+PR을 만들면 로봇이 자동으로 4가지를 **동시에** 검사합니다:
 
 | 검사 항목   | 사용 도구                      | 내용                           | 소요 시간 |
 | ----------- | ------------------------------ | ------------------------------ | --------- |
@@ -140,13 +167,39 @@ PR을 만들면 로봇이 자동으로 4가지를 검사합니다:
 | 빌드        | TypeScript Compiler + Vite     | 배포용 빌드가 성공하는지       | ~30초     |
 | E2E 테스트  | Playwright (Chromium)          | 실제 브라우저에서 화면 테스트  | ~1분 30초 |
 
-- 모두 통과하면 → merge 버튼 활성화
-- 실패하면 → 어디서 문제인지 로그로 알려줌 → 고치고 다시 push
+```
+PR 생성
+  → 4개 검사 동시 실행
+  → 전부 통과 → CI 게이트 pass ✅ → merge 버튼 활성화
 
-### 6단계: Merge & 배포
+  → 하나라도 실패 → CI 게이트 fail ❌ → merge 차단
+               → GitHub Actions 로그에서 원인 확인
+               → 수정 후 다시 push하면 CI 자동 재실행
+```
 
-- `develop`에 merge → Vercel 프리뷰 배포 (테스트용)
-- `develop` → `main` PR → merge → **실제 서비스 자동 배포**
+같은 PR에 새로 push하면 이전 CI 실행은 **자동 취소**되고 새로 돌아갑니다.
+
+### 7단계: Merge & 자동 배포
+
+```
+feature → develop merge
+  → Vercel 프리뷰 배포 (테스트용 URL 자동 생성)
+
+develop → main PR 생성 → merge
+  → Vercel 프로덕션 배포 (실제 서비스에 자동 반영)
+```
+
+**별도로 배포 명령어를 실행할 필요 없음 — merge하면 전부 자동으로 실행**
+
+### 요약: 개발자가 실제로 하는 것
+
+| 단계  | 하는 일            | 자동화                        |
+| ----- | ------------------ | ----------------------------- |
+| 개발  | 코드 작성          | Hot Reload로 즉시 확인        |
+| 커밋  | `git commit`       | Husky가 코드 스타일 자동 검사 |
+| Push  | `git push`         | —                             |
+| PR    | GitHub에서 PR 생성 | CI가 4가지 검사 자동 실행     |
+| Merge | merge 버튼 클릭    | Vercel이 자동 배포            |
 
 ---
 
@@ -155,16 +208,28 @@ PR을 만들면 로봇이 자동으로 4가지를 검사합니다:
 ```
 main (프로덕션 - 실제 서비스에 배포되는 코드)
  └── develop (개발 통합 - 기능들이 모이는 곳)
-      ├── feature/로그인    (각자 작업하는 브랜치)
-      ├── feature/회원가입
-      └── feature/마이페이지
+      ├── feature/로그인
+      ├── fix/로그인-에러
+      └── chore/패키지-업데이트
 ```
+
+### 브랜치 이름 규칙
+
+커밋 메시지 타입과 동일한 접두사를 사용한다.
+
+| 접두사      | 용도           | 예시                  |
+| ----------- | -------------- | --------------------- |
+| `feature/`  | 새 기능        | `feature/login`       |
+| `fix/`      | 버그 수정      | `fix/login-error`     |
+| `refactor/` | 코드 개선      | `refactor/api-client` |
+| `chore/`    | 설정/도구 변경 | `chore/update-deps`   |
+| `docs/`     | 문서 작업      | `docs/readme-update`  |
 
 ### 규칙
 
 - `main`, `develop`에 직접 push 불가 → 반드시 PR을 통해서만 합칠 수 있음
 - PR에서 CI 검사를 통과해야 merge 가능
-- 협업자가 합류하면 리뷰 승인 1명 필수로 변경 예정
+- 협업자가 합류하면 리뷰 승인 1명 필수로 변경 고민중
 
 ---
 
@@ -182,20 +247,22 @@ main (프로덕션 - 실제 서비스에 배포되는 코드)
 
 ---
 
-## 커밋 메시지 규칙
+## 커밋 메시지 규칙 (Conventional Commits)
 
-```
-타입: 설명
+형식: `타입(범위): 설명`
+범위는 생략 가능하다.
 
-예시:
-feat: 로그인 페이지 추가
-fix: 회원가입 이메일 검증 버그 수정
-style: 메인 페이지 레이아웃 변경
-refactor: API 호출 로직 정리
-docs: README 업데이트
-test: 로그인 테스트 추가
-chore: 패키지 업데이트
-```
+| 타입       | 용도           | 예시                                         |
+| ---------- | -------------- | -------------------------------------------- |
+| `feat`     | 새 기능        | `feat(auth): add login form`                 |
+| `fix`      | 버그 수정      | `fix(login): resolve credential validation`  |
+| `docs`     | 문서 변경      | `docs(readme): update installation guide`    |
+| `style`    | 포맷팅/UI 변경 | `style(button): improve spacing consistency` |
+| `refactor` | 코드 리팩토링  | `refactor(user): extract service layer`      |
+| `test`     | 테스트 추가    | `test(api): add query integration tests`     |
+| `chore`    | 빌드/도구 변경 | `chore(deps): update react to v19`           |
+
+범위 없이 간단하게 써도 된다: `feat: 로그인 페이지 추가`
 
 ---
 
@@ -209,9 +276,4 @@ chore: 패키지 업데이트
 
 ## 추가 참고 파일
 
-| 파일                      | 내용                           |
-| ------------------------- | ------------------------------ |
-| `docs/libraries.md`       | 설치된 패키지 목록과 사용 이유 |
-| `docs/ci-setup-report.md` | CI/CD 구성 상세 보고서         |
-| `docs/project-guide.md`   | 이 파일 (프로젝트 가이드)      |
-| `CLAUDE.md`               | 프로젝트 개발 규칙             |
+- /docs 폴더에 있음
