@@ -78,5 +78,10 @@
     "@storybook/test": "8.6.17",
     "@storybook/addon-onboarding": "8.6.17",
     "@storybook/addon-interactions": "8.6.17"
+  },
+  "overrides": {
+    "@storybook/react-vite": {
+      "vite": "$vite"
+    }
   }
 }
